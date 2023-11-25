@@ -2,20 +2,30 @@
 // Ruta a la carpeta de imágenes
 $imageFolder = 'uploads/';
 
-// Nombre del archivo de imagen (puedes pasarlo como parámetro en la solicitud)
-$imageName = isset($_GET['image']) ? $_GET['image'] : '';
-$imagePath = $imageFolder . $imageName;
+try {
+    if (!isset($_GET['image'])) {
+        throw new InvalidArgumentException('Se requiere el parámetro "image".');
+    }
 
-// Verificar si el archivo existe
-if (file_exists($imagePath)) {
+    $imageName = $_GET['image'];
+    $imagePath = $imageFolder . $imageName;
+
+    if (!file_exists($imagePath)) {
+        throw new RuntimeException('La imagen no existe.');
+    }
+
     // Configurar encabezados para la respuesta (imagen)
     header('Content-Type: image/jpeg');
 
     // Leer y enviar la imagen al cliente
     readfile($imagePath);
-} else {
-    // Devolver una respuesta de error si la imagen no existe
-    echo json_encode(['error' => 'La imagen no existe.']);
+} catch (InvalidArgumentException $e) {
+    http_response_code(400);
+    echo json_encode(['error' => $e->getMessage()]);
+} catch (RuntimeException $e) {
+    http_response_code(404);
+    echo json_encode(['error' => $e->getMessage()]);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Error interno del servidor']);
 }
-
-?>
